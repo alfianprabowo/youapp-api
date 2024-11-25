@@ -30,7 +30,6 @@ export class AuthService {
                 status: 201,
                 message: "User not found",
             };
-            // throw new UnauthorizedException('invalid email or username');
         } else {
 
             const passwordMatch = await bcrypt.compare(password, user.password);
@@ -39,7 +38,6 @@ export class AuthService {
                     status: 201,
                     message: "Incorrect password",
                 };
-                // throw new UnauthorizedException('invalid email or username');
             } else {
 
                 const access_token = await this.jwtService.signAsync(
@@ -62,25 +60,31 @@ export class AuthService {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // ! CHECK USER FIRST IF !USER
-
-        const user = await this.userModel.create({
-            email,
-            username,
-            password: hashedPassword,
-        });
-
-        await user.save();
-
-        const access_token = await this.jwtService.signAsync(
-            { email: user.email },
+        // ! CHECK USER FIRST  
+        const checkUser = await this.userModel.findOne(
             {
-                secret: process.env.JWT_SECRET,
-                // expiresIn: process.env.JWT_EXPIRES, 
-            }
+                email: email
+            },
         );
+        if (checkUser) {
+            return {
+                status: 201,
+                message: "User already exist",
+            };
+        } else {
 
-        return { access_token };
-        // return 'This action adds a new user';
+            const user = await this.userModel.create({
+                email,
+                username,
+                password: hashedPassword,
+            });
+
+            await user.save();
+
+            return {
+                status: 200,
+            };
+        }
+
     }
 }
